@@ -50,8 +50,12 @@
             </view>
             <view wx:elif="{{questionItem.questionType === 6}}">
               <rich-text nodes="{{questionItem.itemOrder}}. {{questionItem.title}}" />
+              <view class="video-box" wx:if="{{video}}">
+                <video class="video" class="lazy" src="{{video}}"></video>
+                <view style="text-align:center;color:green;font-size:14px;padding-top:7px;">当前视频大小为{{size}}M</view>
+            </view>
               <button class="i-btn  i-btn-primary i-btn-square" bindtap="selectVideo">
-                点击上传视频
+                选择视频
               </button>
             </view>
             <view wx:else>

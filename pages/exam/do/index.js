@@ -14,9 +14,12 @@ Page({
     remainTimeStr: '',
     modalShow: false,
     result: 0,
-    timeOutShow: false
+    timeOutShow: false,
+    video: '',
+    size: '',
+    videoLink: ''
   },
-  onLoad: function(options) {
+  onLoad: function (options) {
     let paperId = options.id
     let _this = this
     _this.setData({
@@ -43,11 +46,79 @@ Page({
       })
   },
   selectVideo() {
-    
+    var that = this
+    wx.chooseVideo({
+      sourceType: ['album', 'camera'],
+      maxDuration: 60,
+      camera: 'back',
+      success: function (res) {
+        that.setData({
+          video: res.tempFilePath,
+          size: (res.size / (1024 * 1024)).toFixed(2)
+        })
+        that.uploadVideo();
+      }
+    })
+  },
+  uploadVideo() {
+    wx.showLoading({
+      title: '上传进度：0%',
+      mask: true
+    })
+    const uploadTask = wx.uploadFile({
+      url: 'https://zxks.xmchoice.cn:7000/api/wx/student/video/upload',
+      filePath: this.data.video,
+      name: 'file',
+      header: {
+        'token': wx.getStorageSync('token')
+      }, // 设置请求的 header
+      formData: {
+        token: wx.getStorageSync('token')
+      },
+      success: function (res) {
+        console.log("uploadFile", res)
+        // success
+        let data = JSON.parse(res.data)
+        wx.hideLoading()
+        
+        if (data.code != 1) {
+          wx.showToast({
+            title: '上传失败',
+            icon: 'none'
+          })
+        } else {
+          wx.showToast({
+            title: '上传成功',
+          })
+          this.setData({
+            videoLink: res.response
+          })
+        }
+
+      },
+      fail: function () {
+        // fail
+        wx.hideLoading()
+        wx.showToast({
+          title: '上传失败',
+          icon: 'none'
+        })
+      }
+    })
+    //监听上传进度变化事件
+    uploadTask.onProgressUpdate((res) => {
+      wx.showLoading({
+        title: '上传进度：' + res.progress + '%',
+        mask: true //是否显示透明蒙层，防止触摸穿透
+      })
+      console.log("上传进度", res.progress)
+      console.log("已经上传的数据长度，单位 Bytes:", res.totalBytesSent)
+      console.log("预期需要上传的数据总长度，单位 Bytes:", res.totalBytesExpectedToSend)
+    })
   },
   timeReduce() {
     let _this = this
-    let timer = setInterval(function() {
+    let timer = setInterval(function () {
       let remainTime = _this.data.remainTime
       if (remainTime <= 0) {
         _this.timeOut()
@@ -77,7 +148,7 @@ Page({
       timeOutShow: true
     });
   },
-  formSubmit: function(e) {
+  formSubmit: function (e) {
     let _this = this
     if (this.data.timer) {
       clearInterval(this.data.timer)
